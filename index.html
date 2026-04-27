@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Luxe 3D Furniture Gallery</title>
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --sand: #f5f0e8;
+      --parchment: #ede6d6;
+      --cream: #faf7f2;
+      --ink: #1a1814;
+      --charcoal: #3d3a35;
+      --muted: #8c8880;
+      --border: rgba(60,55,48,0.12);
+      --border-strong: rgba(60,55,48,0.22);
+      --gold: #b8985a;
+      --gold-light: #e8d9b5;
+      --panel-bg: rgba(255,252,248,0.92);
+      --r: 16px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--sand);
+      color: var(--ink);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Subtle noise texture overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Top header bar */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(245,240,232,0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 300;
+      font-size: 22px;
+      letter-spacing: 0.12em;
+      color: var(--ink);
+      text-transform: uppercase;
+    }
+
+    .logo span {
+      color: var(--gold);
+    }
+
+    .topbar-tag {
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    /* Main layout */
+    .shell {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 280px 1fr 300px;
+      gap: 0;
+      height: calc(100vh - 64px);
+    }
+
+    /* Sidebar shared */
+    .sidebar {
+      background: var(--panel-bg);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-right {
+      border-right: none;
+      border-left: 1px solid var(--border);
+    }
+
+    .sidebar-head {
+      padding: 24px 20px 16px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .sidebar-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      font-weight: 400;
+      color: var(--ink);
+      margin-bottom: 14px;
+    }
+
+    /* Tab switcher */
+    .tab-switcher {
+      display: flex;
+      background: var(--parchment);
+      border-radius: 10px;
+      padding: 3px;
+      gap: 2px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      border: none;
+      background: none;
+      padding: 7px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      transition: all 0.25s ease;
+    }
+
+    .tab-btn.active {
+      background: white;
+      color: var(--ink);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    /* Model list */
+    .model-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .model-scroll::-webkit-scrollbar { width: 4px; }
+    .model-scroll::-webkit-scrollbar-track { background: transparent; }
+    .model-scroll::-webkit-scrollbar-thumb { background: var(--parchment); border-radius: 2px; }
+
+    .model-btn {
+      width: 100%;
+      text-align: left;
+      border: 1px solid transparent;
+      background: transparent;
+      border-radius: 10px;
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+    }
+
+    .model-btn:hover {
+      background: var(--parchment);
+      border-color: var(--border);
+    }
+
+    .model-btn.active {
+      background: var(--gold-light);
+      border-color: var(--gold);
+    }
+
+    .model-btn.active .model-dot {
+      background: var(--gold);
+    }
+
+    .model-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border-strong);
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+
+    .model-name {
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--charcoal);
+      transition: color 0.2s;
+    }
+
+    .model-btn.active .model-name {
+      color: var(--ink);
+      font-weight: 500;
+    }
+
+    .model-type-badge {
+      margin-left: auto;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    /* Center viewer */
+    .viewer-wrap {
+      position: relative;
+      overflow: hidden;
+      background: radial-gradient(ellipse at 50% 30%, #ffffff 0%, #f0e9dc 60%, #e5dbd0 100%);
+    }
+
+    model-viewer {
+      width: 100%;
+      height: 100%;
+      --poster-color: transparent;
+      --progress-bar-color: var(--gold);
+    }
+
+    /* Info overlay */
+    .viewer-info {
+      position: absolute;
+      bottom: 28px;
+      left: 28px;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .viewer-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px;
+      font-weight: 300;
+      letter-spacing: 0.04em;
+      color: var(--ink);
+      line-height: 1.1;
+      opacity: 0;
+      transform: translateY(12px);
+      animation: fadeUp 0.5s 0.15s forwards;
+    }
+
+    .viewer-status {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 4px;
+      opacity: 0;
+      animation: fadeUp 0.5s 0.25s forwards;
+    }
+
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Top right badges */
+    .viewer-badges {
+      position: absolute;
+      top: 22px;
+      right: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 10;
+    }
+
+    .badge {
+      background: rgba(255,252,248,0.82);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--charcoal);
+      font-weight: 500;
+    }
+
+    .badge.gold-badge {
+      background: rgba(232,217,181,0.7);
+      border-color: var(--gold);
+      color: #7a6230;
+    }
+
+    /* Loading overlay */
+    .loading-overlay {
+      position: absolute;
+      inset: 0;
+      background: var(--cream);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      transition: opacity 0.4s ease, visibility 0.4s ease;
+    }
+
+    .loading-overlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .loader-ring {
+      width: 44px;
+      height: 44px;
+      border: 2px solid var(--parchment);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loader-text {
+      margin-top: 16px;
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* Right panel */
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-section {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .section-label {
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 500;
+      margin-bottom: 14px;
+    }
+
+    /* Color picker */
+    .color-picker-wrap {
+      display: flex;
+      gap: 10px;
+    }
+
+    #hueSlider {
+      width: 16px;
+      height: 130px;
+      border-radius: 8px;
+      background: linear-gradient(to bottom, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+      position: relative;
+      cursor: pointer;
+      flex-shrink: 0;
+      box-shadow: inset 0 0 0 1px var(--border);
+    }
+
+    #satBox {
+      flex: 1;
+      height: 130px;
+      border-radius: 8px;
+      position: relative;
+      cursor: crosshair;
+      background-image: linear-gradient(to bottom, transparent, #000), linear-gradient(to right, #fff, transparent);
+      box-shadow: inset 0 0 0 1px var(--border);
+    }
+
+    #satCursor {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid white;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.3);
+    }
+
+    #hueCursor {
+      position: absolute;
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      border: 2px solid white;
+      pointer-events: none;
+      transform: translateY(-50%);
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.2);
+    }
+
+    /* Color preview swatch */
+    .color-preview {
+      width: 100%;
+      height: 40px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+      transition: background 0.15s;
+    }
+
+    /* RGB inputs */
+    .rgb-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .rgb-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .rgb-field label {
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .rgb-field input {
+      width: 100%;
+      padding: 7px 4px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      text-align: center;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      background: white;
+      color: var(--ink);
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    .rgb-field input:focus { border-color: var(--gold); }
+
+    .hex-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .hex-label {
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+
+    #hexInput {
+      flex: 1;
+      padding: 7px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      background: white;
+      color: var(--ink);
+      outline: none;
+    }
+
+    #hexInput:focus { border-color: var(--gold); }
+
+    /* Preset colors */
+    .presets-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .preset-dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+
+    .preset-dot:hover { transform: scale(1.15); }
+    .preset-dot.active-preset { border-color: var(--gold); }
+
+    /* Reset btn */
+    .reset-btn {
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: transparent;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--charcoal);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-top: 4px;
+    }
+
+    .reset-btn:hover { background: var(--parchment); border-color: var(--border-strong); }
+
+    /* No-customize notice */
+    .no-custom-notice {
+      text-align: center;
+      padding: 20px;
+    }
+
+    .no-custom-notice p {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-top: 8px;
+    }
+
+    /* Bottom spacer / AR button area */
+    .ar-section {
+      padding: 20px;
+      margin-top: auto;
+    }
+
+    .ar-btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      background: var(--ink);
+      color: white;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .ar-btn:hover {
+      background: var(--charcoal);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(26,24,20,0.18);
+    }
+
+    .ar-btn:active { transform: translateY(0); }
+
+    .ar-icon {
+      width: 18px;
+      height: 18px;
+      opacity: 0.85;
+    }
+
+    /* Static notice for no-customize */
+    .static-badge {
+      display: inline-block;
+      background: var(--parchment);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    /* Scrollable model list animation */
+    .model-btn {
+      animation: slideIn 0.25s ease both;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-8px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .model-btn:nth-child(1) { animation-delay: 0.03s; }
+    .model-btn:nth-child(2) { animation-delay: 0.06s; }
+    .model-btn:nth-child(3) { animation-delay: 0.09s; }
+    .model-btn:nth-child(4) { animation-delay: 0.12s; }
+    .model-btn:nth-child(5) { animation-delay: 0.15s; }
+    .model-btn:nth-child(6) { animation-delay: 0.18s; }
+    .model-btn:nth-child(7) { animation-delay: 0.21s; }
+    .model-btn:nth-child(8) { animation-delay: 0.24s; }
+    .model-btn:nth-child(9) { animation-delay: 0.27s; }
+    .model-btn:nth-child(10) { animation-delay: 0.30s; }
+
+    /* Responsive */
+    @media (max-width: 960px) {
+      .shell {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+      .sidebar { border-right: none; border-bottom: 1px solid var(--border); max-height: 220px; }
+      .sidebar-right { border-left: none; border-top: 1px solid var(--border); }
+      .viewer-wrap { height: 55vw; min-height: 280px; }
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="logo">Luxe<span> ·</span> Atelier</div>
+  <div class="topbar-tag">3D Furniture Gallery</div>
+  <div class="topbar-tag" style="font-size:10px;">AR Ready</div>
+</header>
+
+<main class="shell">
+
+  <!-- LEFT: Model list -->
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <h2 class="sidebar-title">Collection</h2>
+      <div class="tab-switcher">
+        <button class="tab-btn active" id="btn-custom" onclick="switchTab('custom')">Customizable</button>
+        <button class="tab-btn" id="btn-static" onclick="switchTab('static')">Standard</button>
+      </div>
+    </div>
+    <div class="model-scroll" id="modelList"></div>
+  </aside>
+
+  <!-- CENTER: Viewer -->
+  <section class="viewer-wrap">
+    <div class="loading-overlay" id="loadingOverlay">
+      <div class="loader-ring"></div>
+      <p class="loader-text">Loading Model</p>
+    </div>
+
+    <div class="viewer-badges">
+      <span class="badge" id="typeBadge">Customizable</span>
+      <span class="badge gold-badge">AR Ready</span>
+    </div>
+
+    <div class="viewer-info">
+      <div class="viewer-name" id="displayName">Collection</div>
+      <div class="viewer-status" id="status">Drag to rotate · Pinch to zoom</div>
+    </div>
+
+    <model-viewer
+      id="mv"
+      src="cus1.glb"
+      ar
+      ar-modes="webxr scene-viewer quick-look"
+      camera-controls
+      shadow-intensity="1.2"
+      shadow-softness="0.5"
+      exposure="1"
+      auto-rotate
+      auto-rotate-delay="3000"
+      rotation-per-second="20deg"
+    ></model-viewer>
+  </section>
+
+  <!-- RIGHT: Controls -->
+  <aside class="sidebar sidebar-right right-panel">
+
+    <!-- Color section -->
+    <div id="colorControls">
+      <div class="panel-section">
+        <p class="section-label">Material Color</p>
+        <div id="colorPreview" class="color-preview" style="background:#ffffff;"></div>
+        <div class="color-picker-wrap">
+          <div id="hueSlider"><div id="hueCursor"></div></div>
+          <div id="satBox"><div id="satCursor"></div></div>
+        </div>
+        <div class="rgb-grid">
+          <div class="rgb-field"><label>R</label><input type="number" id="inpR" value="255" min="0" max="255"></div>
+          <div class="rgb-field"><label>G</label><input type="number" id="inpG" value="255" min="0" max="255"></div>
+          <div class="rgb-field"><label>B</label><input type="number" id="inpB" value="255" min="0" max="255"></div>
+        </div>
+        <div class="hex-row">
+          <span class="hex-label">HEX</span>
+          <input type="text" id="hexInput" value="#FFFFFF" maxlength="7">
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <p class="section-label">Presets</p>
+        <div class="presets-row" id="presetsRow"></div>
+        <button class="reset-btn" id="resetBtn">↩ Reset Original</button>
+      </div>
+    </div>
+
+    <!-- No-customize notice -->
+    <div id="noCustomNotice" class="panel-section hidden">
+      <p class="section-label">Material</p>
+      <div class="no-custom-notice">
+        <span class="static-badge">Standard Model</span>
+        <p>This piece is a standard model. Color customization is not available.</p>
+      </div>
+    </div>
+
+    <!-- AR Button -->
+    <div class="ar-section">
+      <button class="ar-btn" id="arBtn">
+        <svg class="ar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9V5a2 2 0 012-2h4"/>
+          <path d="M15 3h4a2 2 0 012 2v4"/>
+          <path d="M21 15v4a2 2 0 01-2 2h-4"/>
+          <path d="M9 21H5a2 2 0 01-2-2v-4"/>
+          <path d="M12 8l4 2.5V16L12 18.5 8 16v-5.5L12 8z"/>
+        </svg>
+        View in Your Space
+      </button>
+    </div>
+
+  </aside>
+</main>
+
+<script type="module">
+  const mv = document.getElementById('mv');
+  const modelListEl = document.getElementById('modelList');
+  const loadingOverlay = document.getElementById('loadingOverlay');
+
+  // --- Inventory ---
+  const inventory = {
+    custom: [
+      { id: 'cus1', name: 'Bed Suite', file: 'cus1.glb' },
+      { id: 'cus2', name: 'Sofa Classic', file: 'cus2.glb' },
+      { id: 'cus3', name: 'Sofa Set', file: 'cus3.glb' },
+      { id: 'cus4', name: 'Sofa Pearl', file: 'cus4.glb' },
+      { id: 'cus5', name: 'Soft Chair', file: 'cus5.glb' },
+      { id: 'cus6', name: 'Sofa Grand', file: 'cus6.glb' },
+      { id: 'cus7', name: 'Single Sofa', file: 'cus7.glb' }
+    ],
+    static: [
+      { id: 'st1',  name: 'Bed Frame',     file: 'st1.glb' },
+      { id: 'st2',  name: 'Center Table',  file: 'st2.glb' },
+      { id: 'st3',  name: 'Kids Bed I',    file: 'st3.glb' },
+      { id: 'st4',  name: 'Kids Bed II',   file: 'st4.glb' },
+      { id: 'st5',  name: 'Sofa Classic',  file: 'st5.glb' },
+      { id: 'st6',  name: 'Single Sofa I', file: 'st6.glb' },
+      { id: 'st7',  name: 'Single Sofa II',file: 'st7.glb' },
+      { id: 'st8',  name: 'Sofa Duo',      file: 'st8.glb' },
+      { id: 'st9',  name: 'Sofa Modern',   file: 'st9.glb' },
+      { id: 'st10', name: 'Bed Deluxe',    file: 'st10.glb' }
+    ]
+  };
+
+  // Preset colors (material swatches)
+  const presets = [
+    '#D4B5A0', '#C9855C', '#A0522D', '#7B4A2B',
+    '#5B7A6E', '#3D5A52', '#8B9EB7', '#4A6384',
+    '#C8C8C8', '#2E2E2E', '#F5E6C8', '#D4C5A9'
+  ];
+
+  let currentTab = 'custom';
+  let currentFile = 'cus1.glb';
+  let activeMaterial = null;
+  let originalColor = null;
+  let curH = 0, curS = 0, curV = 100;
+  let isDraggingHue = false, isDraggingSat = false;
+
+  // --- Build preset dots ---
+  const presetsRow = document.getElementById('presetsRow');
+  presets.forEach(hex => {
+    const dot = document.createElement('button');
+    dot.className = 'preset-dot';
+    dot.style.background = hex;
+    dot.title = hex;
+    dot.addEventListener('click', () => {
+      document.querySelectorAll('.preset-dot').forEach(d => d.classList.remove('active-preset'));
+      dot.classList.add('active-preset');
+      const r = parseInt(hex.slice(1,3),16);
+      const g = parseInt(hex.slice(3,5),16);
+      const b = parseInt(hex.slice(5,7),16);
+      syncFromRGB(r, g, b);
+    });
+    presetsRow.appendChild(dot);
+  });
+
+  // --- Tab switching ---
+  window.switchTab = (tab) => {
+    currentTab = tab;
+    document.getElementById('btn-custom').classList.toggle('active', tab === 'custom');
+    document.getElementById('btn-static').classList.toggle('active', tab === 'static');
+    renderList();
+  };
+
+  // --- Render model list ---
+  function renderList() {
+    modelListEl.innerHTML = '';
+    inventory[currentTab].forEach(item => {
+      const btn = document.createElement('button');
+      btn.className = 'model-btn' + (item.file === currentFile ? ' active' : '');
+      btn.innerHTML = `
+        <span class="model-dot"></span>
+        <span class="model-name">${item.name}</span>
+        <span class="model-type-badge">${currentTab === 'custom' ? '|' : 'GLB'}</span>
+      `;
+      btn.addEventListener('click', () => loadModel(item.file, item.name));
+      modelListEl.appendChild(btn);
+    });
+  }
+
+  // --- Load model (BUG FIX: actually sets mv.src) ---
+  function loadModel(file, name) {
+    if (file === currentFile) return;
+    currentFile = file;
+
+    // Show loading
+    loadingOverlay.classList.remove('hidden');
+    document.getElementById('status').textContent = 'Loading…';
+
+    // FIXED: actually update the model-viewer src
+    mv.src = file;
+
+    // Update UI
+    document.getElementById('displayName').textContent = name;
+    document.getElementById('typeBadge').textContent = currentTab === 'custom' ? 'Customizable' : 'Standard';
+
+    const isCustom = currentTab === 'custom';
+    document.getElementById('colorControls').classList.toggle('hidden', !isCustom);
+    document.getElementById('noCustomNotice').classList.toggle('hidden', isCustom);
+
+    // Reset material tracking
+    activeMaterial = null;
+    originalColor = null;
+
+    renderList();
+  }
+
+  // Expose for initial call
+  window.loadModel = loadModel;
+
+  // --- Model load events ---
+  mv.addEventListener('load', () => {
+    loadingOverlay.classList.add('hidden');
+    document.getElementById('status').textContent = 'Drag to rotate · Pinch to zoom';
+
+    if (currentTab === 'custom' && mv.model) {
+      const mats = mv.model.materials;
+      if (mats && mats.length > 0) {
+        activeMaterial = mats.find(m =>
+          /fabric|cloth|bed|sofa|chair|seat|cushion|body|upholstery|material/i.test(m.name)
+        ) || mats[0];
+
+        if (activeMaterial) {
+          const cf = activeMaterial.pbrMetallicRoughness.baseColorFactor;
+          originalColor = [...cf];
+          syncFromRGB(cf[0]*255, cf[1]*255, cf[2]*255);
+        }
+      }
+    }
+  });
+
+  mv.addEventListener('error', (e) => {
+    loadingOverlay.classList.add('hidden');
+    document.getElementById('status').textContent = 'Model unavailable';
+  });
+
+  // --- HSV ↔ RGB helpers ---
+  function hsvToRgb(h, s, v) {
+    s /= 100; v /= 100;
+    const f = (n, k = (n + h / 60) % 6) =>
+      v - v * s * Math.max(Math.min(k, 4 - k, 1), 0);
+    return [f(5), f(3), f(1)];
+  }
+
+  function rgbToHsv(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+    let h;
+    const s = max === 0 ? 0 : d / max, v = max;
+    if (max === min) { h = 0; }
+    else {
+      if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+      else if (max === g) h = (b - r) / d + 2;
+      else h = (r - g) / d + 4;
+      h /= 6;
+    }
+    return [h * 360, s * 100, v * 100];
+  }
+
+  function hexToRgb(hex) {
+    hex = hex.replace('#', '');
+    if (hex.length === 3) hex = hex.split('').map(c => c+c).join('');
+    return [
+      parseInt(hex.slice(0,2),16),
+      parseInt(hex.slice(2,4),16),
+      parseInt(hex.slice(4,6),16)
+    ];
+  }
+
+  // --- Sync UI from current HSV ---
+  function syncUI() {
+    const [r, g, b] = hsvToRgb(curH, curS, curV);
+    const ri = Math.round(r * 255), gi = Math.round(g * 255), bi = Math.round(b * 255);
+    const hex = '#' + [ri, gi, bi].map(x => x.toString(16).padStart(2,'0')).join('').toUpperCase();
+
+    document.getElementById('inpR').value = ri;
+    document.getElementById('inpG').value = gi;
+    document.getElementById('inpB').value = bi;
+    document.getElementById('hexInput').value = hex;
+    document.getElementById('colorPreview').style.background = hex;
+
+    document.getElementById('hueCursor').style.top = (curH / 360 * 100) + '%';
+    document.getElementById('satBox').style.backgroundColor = `hsl(${curH}, 100%, 50%)`;
+    document.getElementById('satCursor').style.left = curS + '%';
+    document.getElementById('satCursor').style.top = (100 - curV) + '%';
+
+    if (activeMaterial) {
+      activeMaterial.pbrMetallicRoughness.setBaseColorFactor([r, g, b, 1]);
+    }
+  }
+
+  function syncFromRGB(r, g, b) {
+    [curH, curS, curV] = rgbToHsv(r, g, b);
+    syncUI();
+  }
+
+  // --- Hue slider drag ---
+  const hueEl = document.getElementById('hueSlider');
+  const satEl = document.getElementById('satBox');
+
+  function getClientPos(e) {
+    return e.touches ? [e.touches[0].clientX, e.touches[0].clientY] : [e.clientX, e.clientY];
+  }
+
+  hueEl.addEventListener('mousedown',  e => { isDraggingHue = true; updateHue(e); e.preventDefault(); });
+  hueEl.addEventListener('touchstart', e => { isDraggingHue = true; updateHue(e); e.preventDefault(); }, {passive:false});
+  satEl.addEventListener('mousedown',  e => { isDraggingSat = true; updateSat(e); e.preventDefault(); });
+  satEl.addEventListener('touchstart', e => { isDraggingSat = true; updateSat(e); e.preventDefault(); }, {passive:false});
+
+  window.addEventListener('mousemove',  e => { if (isDraggingHue) updateHue(e); if (isDraggingSat) updateSat(e); });
+  window.addEventListener('touchmove',  e => { if (isDraggingHue) updateHue(e); if (isDraggingSat) updateSat(e); }, {passive:false});
+  window.addEventListener('mouseup',   () => { isDraggingHue = false; isDraggingSat = false; });
+  window.addEventListener('touchend',  () => { isDraggingHue = false; isDraggingSat = false; });
+
+  function updateHue(e) {
+    const rect = hueEl.getBoundingClientRect();
+    const [, cy] = getClientPos(e);
+    curH = Math.max(0, Math.min(360, ((cy - rect.top) / rect.height) * 360));
+    syncUI();
+  }
+
+  function updateSat(e) {
+    const rect = satEl.getBoundingClientRect();
+    const [cx, cy] = getClientPos(e);
+    curS = Math.max(0, Math.min(100, ((cx - rect.left) / rect.width) * 100));
+    curV = Math.max(0, Math.min(100, 100 - ((cy - rect.top) / rect.height) * 100));
+    syncUI();
+  }
+
+  // --- Manual RGB/HEX inputs ---
+  ['inpR','inpG','inpB'].forEach(id => {
+    document.getElementById(id).addEventListener('input', () => {
+      const r = +document.getElementById('inpR').value;
+      const g = +document.getElementById('inpG').value;
+      const b = +document.getElementById('inpB').value;
+      syncFromRGB(
+        Math.max(0, Math.min(255, r)),
+        Math.max(0, Math.min(255, g)),
+        Math.max(0, Math.min(255, b))
+      );
+    });
+  });
+
+  document.getElementById('hexInput').addEventListener('change', (e) => {
+    const val = e.target.value.trim();
+    if (/^#?[0-9a-fA-F]{6}$/.test(val)) {
+      const hex = val.startsWith('#') ? val : '#' + val;
+      const [r, g, b] = hexToRgb(hex);
+      syncFromRGB(r, g, b);
+    }
+  });
+
+  // --- Reset ---
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    if (originalColor) {
+      syncFromRGB(originalColor[0]*255, originalColor[1]*255, originalColor[2]*255);
+      document.querySelectorAll('.preset-dot').forEach(d => d.classList.remove('active-preset'));
+    }
+  });
+
+  // --- AR button ---
+  document.getElementById('arBtn').addEventListener('click', () => {
+    mv.activateAR();
+  });
+
+  // --- Init ---
+  renderList();
+
+  // Set initial display name
+  document.getElementById('displayName').textContent = inventory.custom[0].name;
+</script>
+</body>
+</html>
