@@ -616,13 +616,117 @@
 
     /* Responsive */
     @media (max-width: 960px) {
+      .topbar {
+        height: 56px;
+        padding: 0 14px;
+      }
+
+      .logo {
+        font-size: 18px;
+        letter-spacing: 0.08em;
+      }
+
+      .topbar-tag {
+        font-size: 10px;
+        letter-spacing: 0.1em;
+      }
+
       .shell {
         grid-template-columns: 1fr;
         height: auto;
       }
-      .sidebar { border-right: none; border-bottom: 1px solid var(--border); max-height: 220px; }
-      .sidebar-right { border-left: none; border-top: 1px solid var(--border); }
-      .viewer-wrap { height: 55vw; min-height: 280px; }
+
+      .sidebar {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        max-height: none;
+      }
+
+      .sidebar-right {
+        border-left: none;
+        border-top: 1px solid var(--border);
+      }
+
+      .sidebar-head {
+        padding: 14px 14px 10px;
+      }
+
+      .model-scroll {
+        padding: 10px 12px 14px;
+        max-height: 42vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+      }
+
+      .model-btn {
+        padding: 10px 12px;
+      }
+
+      .viewer-wrap {
+        height: clamp(260px, 52vw, 420px);
+        min-height: 260px;
+      }
+
+      .viewer-info {
+        bottom: 14px;
+        left: 14px;
+      }
+
+      .viewer-name {
+        font-size: 22px;
+      }
+
+      .viewer-badges {
+        top: 12px;
+        right: 12px;
+      }
+
+      .panel-section,
+      .ar-section {
+        padding: 14px;
+      }
+
+      #hueSlider,
+      #satBox {
+        height: 108px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .topbar {
+        grid-template-columns: 1fr auto;
+        display: grid;
+        column-gap: 8px;
+      }
+
+      .topbar-tag:last-child {
+        display: none;
+      }
+
+      .sidebar-title {
+        margin-bottom: 10px;
+      }
+
+      .model-scroll {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        max-height: none;
+        overflow: visible;
+      }
+
+      .model-btn {
+        min-height: 46px;
+      }
+
+      .model-type-badge {
+        display: none;
+      }
+
+      .viewer-wrap {
+        height: 44vh;
+      }
     }
 
     .hidden { display: none !important; }
